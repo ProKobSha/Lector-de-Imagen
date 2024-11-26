@@ -1,0 +1,65 @@
+import os
+import tkinter as tk
+from tkinter import filedialog, Canvas, PhotoImage
+from PIL import Image, ImageTk, ImageFilter
+
+class ImageViewerApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Visor de Imágenes")
+        self.root.geometry("800x600")
+
+        self.image_listbox = tk.Listbox(self.root)
+        self.image_listbox.grid(row=0, column=0, sticky="ns")
+        self.image_listbox.bind("<<ListboxSelect>>", self.display_image)
+
+        self.canvas = Canvas(self.root, width=600, height=400)
+        self.canvas.grid(row=0, column=1, padx=10, pady=10)
+
+        self.load_button = tk.Button(self.root, text="Cargar Imágenes", command=self.load_images)
+        self.load_button.grid(row=1, column=0, pady=10)
+
+        self.blur_button = tk.Button(self.root, text="Aplicar Desenfoque", command=self.apply_blur)
+        self.blur_button.grid(row=1, column=1, sticky="w")
+
+        self.contour_button = tk.Button(self.root, text="Aplicar Contorno", command=self.apply_contour)
+        self.contour_button.grid(row=1, column=1, sticky="e")
+
+        self.image_paths = []
+        self.current_image = None
+        self.current_image_path = ""
+
+    def load_images(self):
+        folder_selected = filedialog.askdirectory()
+        if folder_selected:
+            self.image_paths = [os.path.join(folder_selected, f) for f in os.listdir(folder_selected) if f.endswith(('.png', '.jpg', '.jpeg'))]
+            self.image_listbox.delete(0, tk.END)
+            for path in self.image_paths:
+                self.image_listbox.insert(tk.END, os.path.basename(path))
+
+    def display_image(self, event):
+        selected_index = self.image_listbox.curselection()
+        if selected_index:
+            self.current_image_path = self.image_paths[selected_index[0]]
+            self.current_image = Image.open(self.current_image_path)
+            self.update_canvas(self.current_image)
+
+    def apply_blur(self):
+        if self.current_image:
+            blurred_image = self.current_image.filter(ImageFilter.BLUR)
+            self.update_canvas(blurred_image)
+
+    def apply_contour(self):
+        if self.current_image:
+            contoured_image = self.current_image.filter(ImageFilter.CONTOUR)
+            self.update_canvas(contoured_image)
+
+    def update_canvas(self, image):
+        img = ImageTk.PhotoImage(image)
+        self.canvas.create_image(0, 0, anchor="nw", image=img)
+        self.canvas.image = img
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = ImageViewerApp(root)
+    root.mainloop()
